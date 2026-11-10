@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf9f6"><meta name="description" content="Her gün sekiz iskelet kemiğini üç turda öğrenin. Latince veya Türkçe adını yazarak anatomi bilginizi pekiştirin.">
+<title>Günün kemiği</title><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><span class="streak" title="Arka arkaya tamamlanan gün sayısı"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M13 1c2 7-4 8-1 13 2-1 3-3 3-5 6 5 8 10 4 15-5 6-16 3-16-5 0-5 4-8 5-12 0 5 1 6 2 7C7 7 13 6 13 1Z"/></svg><span id="streak">0</span></span><h1>Günün kemiği<span class="dot"></span></h1></div>
+ <nav aria-label="Oyun ayarları"><button id="case" title="Büyük ve küçük harf arasında geçiş yap" aria-label="Büyük harf kullan" aria-pressed="false">Aa</button><button id="language" title="Yanıt dilini değiştir" aria-label="Yanıt dili: Türkçe. Latinceye geç.">Türkçe / Latince</button><button id="sound" aria-pressed="true">Ses açık</button><button id="help" aria-label="Nasıl oynanır?">?</button></nav>
+ <time id="date"></time>
+</header>
+<main>
+<section id="game" aria-label="Kemiği adlandırma oyunu">
+ <div class="stage" id="stage"><canvas id="skull" aria-label="Gri kafatasında sorulan kemik kırmızı renkle gösteriliyor."></canvas><div id="loading" role="status">Kemikler yükleniyor.</div><div class="shadow"></div><span class="model-note">BodyParts3D · CC BY-SA 2.1 JP</span></div>
+ <div id="round-end" class="round-end" hidden><h2 id="round-end-title"></h2><p id="round-end-copy"></p><button id="next-round" class="primary"></button></div>
+ <div class="answer-area" id="answer-area"><p id="round" class="round" aria-live="polite"></p><div id="answer" class="answer" role="textbox" aria-label="Kemik adını ekran klavyesiyle veya fiziksel klavyeyle yazın." aria-readonly="true" tabindex="0"></div><p id="translation" class="translation"></p><p id="explanation" class="explanation"></p><p id="feedback" class="feedback" role="status" aria-live="polite"></p></div>
+ <div id="keyboard" class="keyboard" role="group" aria-label="Ekran klavyesi"></div>
+</section>
+<section id="results" class="results" hidden aria-label="Günün sonuçları"></section>
+</main>
+<footer><span>DocBrain ile her gün biraz anatomi.</span><span><a href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noreferrer">BodyParts3D</a> © The Database Center for Life Science · <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/" target="_blank" rel="noreferrer">CC BY-SA 2.1 JP</a> · <a href="assets/model/ATTRIBUTION.md">Model bilgisi</a> · <a href="KAYNAKLAR.md">Kaynaklar</a></span><span id="storage-note" role="status"></span></footer>
+<dialog id="instructions"><button id="close-help" class="close" aria-label="Kapat">×</button><h2>Her gün sekiz kemik.</h2><p>Kırmızı kemiğin adını yazın ve <b>gir</b> tuşuna basın.</p><ol><li>İlk turda adı görerek yazın.</li><li>İkinci turda yalnızca ilk harften hatırlayın.</li><li>Üçüncü turda başka bir açıdan, ipucusuz adlandırın.</li></ol><p>Latince veya Türkçe çalışabilirsiniz. Büyük ve küçük harfler ile Türkçe karakterlerin sade yazımları kabul edilir. Latince adlarda “os” sözcüğünü yazmanız zorunlu değildir.</p><p>İlerlemeniz bu tarayıcıda saklanır. Yeni kemikler gece yarısı gelir.</p><button id="start" class="primary">Başlayalım</button></dialog>
+<script type="module" src="assets/app.js"></script>
+</body></html>
