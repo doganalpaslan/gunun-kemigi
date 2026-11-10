@@ -3,8 +3,10 @@ import * as THREE from './vendor/three.module.min.js';
 export async function createSkull(canvas){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'low-power'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0xfaf9f6,0);
+ const closeCanvas=document.createElement('canvas');closeCanvas.id='close-view';closeCanvas.setAttribute('aria-hidden','true');canvas.after(closeCanvas);
+ const closeRenderer=new THREE.WebGLRenderer({canvas:closeCanvas,antialias:true,alpha:true,powerPreference:'low-power'});closeRenderer.setPixelRatio(Math.min(devicePixelRatio,1.5));closeRenderer.setClearColor(0x000000,0);
  // Keep the bright lights from clipping the translucent grey surface to white.
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;closeRenderer.toneMapping=renderer.toneMapping;closeRenderer.toneMappingExposure=.85;
  const scene=new THREE.Scene(),pivot=new THREE.Group(),root=new THREE.Group();pivot.add(root);scene.add(pivot);
  scene.add(new THREE.HemisphereLight(0xffffff,0x827e72,2.6));
  for(const [x,y,z,power] of [[-3,5,6,3],[4,0,-3,1.1]]){const l=new THREE.DirectionalLight(0xfffcf6,power);l.position.set(x,y,z);scene.add(l);}
@@ -14,7 +16,7 @@ export async function createSkull(canvas){
  const cache=new Map();let request=0,running=true,lastId='',activeBone,angle=0,targetAngle=0,tilt=.08,targetTilt=.08,frame,mainCenter=new THREE.Vector3(),closeCenter=new THREE.Vector3(),mainSize=100,closeSize=50,ready=false,mainBox=new THREE.Box3(),closeBox=new THREE.Box3();
  const camera=new THREE.OrthographicCamera(-200,200,200,-200,.1,5000);camera.position.set(0,0,2000);camera.lookAt(0,0,0);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const observer=new ResizeObserver(()=>{const {width,height}=canvas.getBoundingClientRect();renderer.setSize(width,height,false)});observer.observe(canvas);
+ const observer=new ResizeObserver(()=>{const {width,height}=canvas.getBoundingClientRect();renderer.setSize(width,height,false);closeRenderer.setSize(closeCanvas.clientWidth,closeCanvas.clientHeight,false)});observer.observe(canvas);
  async function load(region){
   if(cache.has(region)){const v=cache.get(region);cache.delete(region);cache.set(region,v);return v;}
   const res=await fetch(`assets/model/${region==='skull'?'skull':region}.bin`);if(!res.ok)throw Error('Bölge yüklenemedi');const buffer=await res.arrayBuffer(),group=new THREE.Group();
@@ -63,17 +65,18 @@ export async function createSkull(canvas){
   const w=canvas.clientWidth,h=canvas.clientHeight,mobile=w<600,drift=reduced?0:Math.sin(now*.00024)*.17;
   renderer.setScissorTest(false);renderer.clear();renderer.setScissorTest(true);
   function view(x,y,vw,vh,a,t,scale,center,close){
-   renderer.setViewport(x,y,vw,vh);renderer.setScissor(x,y,vw,vh);const box=close?closeBox:mainBox,centerForFit=center;
+   const output=close?closeRenderer:renderer;
+   output.setViewport(x,y,vw,vh);output.setScissor(x,y,vw,vh);const box=close?closeBox:mainBox,centerForFit=center;
    if(close||activeBone.region!=='knee'){const rotation=new THREE.Euler(t,a,0),point=new THREE.Vector3();let extentX=0,extentY=0;for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){point.set(x,y,z).sub(centerForFit).applyEuler(rotation);extentX=Math.max(extentX,Math.abs(point.x));extentY=Math.max(extentY,Math.abs(point.y));}scale=Math.max(extentY,extentX/(vw/vh))*(close?2.5:1.12);}
    camera.left=-scale*vw/vh;camera.right=scale*vw/vh;camera.top=scale;camera.bottom=-scale;camera.updateProjectionMatrix();
    root.position.copy(center).multiplyScalar(-1);pivot.rotation.set(t,a,0);
    // Both views use the same translucent regional context and opaque red target.
-   renderer.render(scene,camera);
+   output.render(scene,camera);
   }
   view(w*(mobile?.02:.16),10,w*(mobile?.74:.62),h-20,angle+drift,tilt,mainSize,mainCenter,false);
-  view(w*(mobile?.72:.76),h*.39,w*(mobile?.28:.24),h*.58,angle+Math.PI*.65+(reduced?0:now*.00008),tilt-.18,closeSize,closeCenter,true);
+  view(0,0,closeCanvas.clientWidth,closeCanvas.clientHeight,angle+Math.PI*.65+(reduced?0:now*.00008),tilt-.18,closeSize,closeCenter,true);
  }
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ready=false;document.querySelector('#loading').hidden=false;document.querySelector('#loading').textContent='Görüntü durdu. Sayfayı yenileyerek devam edebilirsiniz.';});
  frame=requestAnimationFrame(draw);
- return {setBone,dispose(){running=false;cancelAnimationFrame(frame);observer.disconnect();for(const g of cache.values())g.traverse(m=>m.geometry?.dispose());gray.dispose();red.dispose();renderer.dispose();}};
+ return {setBone,dispose(){running=false;cancelAnimationFrame(frame);observer.disconnect();for(const g of cache.values())g.traverse(m=>m.geometry?.dispose());gray.dispose();red.dispose();renderer.dispose();closeRenderer.dispose();closeCanvas.remove();}};
 }

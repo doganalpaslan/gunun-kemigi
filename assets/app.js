@@ -6,30 +6,29 @@ const $=s=>document.querySelector(s);
 const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}}
 function write(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{$('#storage-note').textContent='Tarayıcı depolaması kullanılamıyor. İlerlemeniz bu oturumda korunur.'}}
-let date=localDate();let prefs=read('kemik:preferences',{mode:'tr',upper:false,sound:true});
-if(!['latin','tr'].includes(prefs.mode))prefs.mode='tr';
+let date=localDate();let prefs={...read('kemik:preferences',{upper:false,sound:true}),mode:'latin'};
 const fresh=()=>({round:0,index:0,typed:'',done:false,errors:0,keystrokes:0,correctKeys:0,attempts:0,first:0,misses:{},round3Misses:{},between:false,questionErrors:0,round3Errors:0,started:Date.now(),elapsed:0});
-let state=read(`kemik:v2:${date}:${prefs.mode}`,fresh());
+let state=read(`kemik:v4:${date}:${prefs.mode}`,fresh());
 if(!Number.isInteger(state.round)||state.round<0||state.round>2||!Number.isInteger(state.index)||state.index<0||state.index>7||typeof state.typed!=='string'||typeof state.misses!=='object')state=fresh();
 let skull,busy=false,submitted=false,timer=null;const sound=new GameSound(prefs.sound);
+for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>sound.unlock(),{capture:true});
 const current=()=>roundBones(date,state.round)[state.index];
 const name=b=>prefs.mode==='latin'?b.latin:b.tr;
 
 const aliases=b=>answerAliases(b,prefs.mode);
 const display=s=>prefs.upper?s.toLocaleUpperCase(prefs.mode==='tr'?'tr-TR':'en-US'):s.toLocaleLowerCase(prefs.mode==='tr'?'tr-TR':'en-US');
-function save(){write(`kemik:v2:${date}:${prefs.mode}`,state);write('kemik:preferences',prefs)}
+function save(){write(`kemik:v4:${date}:${prefs.mode}`,state);write('kemik:preferences',prefs)}
 function streak(){const s=read('kemik:streak',{count:0,last:null});return s.last&&(dayNumber(date)-dayNumber(s.last)<=1)?s.count:0;}
 function paint(){
  $('#date').textContent=new Date(date+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});$('#date').dateTime=date;
  $('#streak').textContent=streak();$('#case').setAttribute('aria-pressed',String(prefs.upper));$('#case').setAttribute('aria-label',prefs.upper?'Küçük harf kullan':'Büyük harf kullan');
- $('#language').innerHTML=`<span class="${prefs.mode==='tr'?'lang-active':''}">Türkçe</span> / <span class="${prefs.mode==='latin'?'lang-active':''}">Latince</span>`;$('#language').dataset.mode=prefs.mode;$('#language').setAttribute('aria-label',`Yanıt dili: ${prefs.mode==='latin'?'Latince. Türkçeye geç.':'Türkçe. Latinceye geç.'}`);
  $('#sound').textContent=prefs.sound?'Ses açık':'Ses kapalı';$('#sound').setAttribute('aria-pressed',String(prefs.sound));
  $('#game').hidden=state.done;$('#results').hidden=!state.done;
  if(state.done){renderResults();return}
  $('#game').classList.toggle('round-ended',!!state.between);$('#round-end').hidden=!state.between;$('#answer-area').hidden=!!state.between;$('#keyboard').hidden=!!state.between;
  if(state.between){$('#round-end-title').textContent=`Tur ${state.round} bitti · 8 / 8`;$('#round-end-copy').textContent=state.round===1?'Sekizi de toz oldu. Şimdi adlar kayboluyor. İlk harf ve bir ipucu kalıyor.':'Bir tur daha kaldı. Şimdi ezberden, öbür taraftan hatırlayın.';$('#next-round').innerHTML=`${state.round+1}. tura başla <kbd>gir</kbd>`;return}
  const b=current();$('#round').textContent=`Tur ${state.round+1} · ${['Görerek yazın','İlk harften hatırlayın','Diğer taraftan, ezberden yazın'][state.round]} · ${state.index+1} / 8`;
- renderAnswer();$('#translation').textContent=state.round===1&&!submitted?b.clue:state.round===0||submitted?(prefs.mode==='latin'?b.tr:b.latin):'';
+ renderAnswer();$('#translation').textContent=state.round===1?b.clue:state.round===0?b.tr:'';
  $('#explanation').textContent=state.round===0||submitted?b.fact:'';
  skull?.setBone(b,state.round);buildKeyboard();
 }
@@ -52,10 +51,10 @@ function buildKeyboard(){
  [{label:'',key:'none',width:'spacer'},{label:'boşluk',key:' ',width:'space'},{label:'',key:'none',width:'spacer'}]
  ];
  const keyboard=$('#keyboard');keyboard.replaceChildren();keyboard.classList.toggle('turkish',tr);
- for(const row of rows){const el=document.createElement('div');el.className='keyrow';for(const item of row){const k=typeof item==='string'?{label:display(item),key:item}:item;const button=document.createElement('button');button.type='button';button.className='key '+(k.width||'');button.textContent=k.label;button.dataset.key=k.key;button.tabIndex=k.key==='none'?-1:0;button.setAttribute('aria-label',k.key===' '?'Boşluk':k.key==='Tab'?'Sıradaki sözcük':k.key==='Backspace'?'Son harfi sil':k.key==='Enter'?'Yanıtı gönder':k.label);if(k.key==='none')button.setAttribute('aria-hidden','true');if(k.key==='CapsLock'&&prefs.upper)button.classList.add('mod-on');el.append(button)}keyboard.append(el)}
+ for(const row of rows){const el=document.createElement('div');el.className='keyrow';for(const item of row){const k=typeof item==='string'?{label:prefs.upper?item.toLocaleUpperCase('tr-TR'):item,key:item}:item;const button=document.createElement('button');button.type='button';button.className='key '+(k.width||'');button.textContent=k.label;button.dataset.key=k.key;button.tabIndex=k.key==='none'?-1:0;button.setAttribute('aria-label',k.key===' '?'Boşluk':k.key==='Tab'?'Sıradaki sözcük':k.key==='Backspace'?'Son harfi sil':k.key==='Enter'?'Yanıtı gönder':k.label);if(k.key==='none')button.setAttribute('aria-hidden','true');if(k.key==='CapsLock'&&prefs.upper)button.classList.add('mod-on');el.append(button)}keyboard.append(el)}
  document.querySelector('[data-key="Enter"]').classList.toggle('ready',aliases(current()).includes(normalize(state.typed)));
 }
-function pressFeedback(key){for(const el of document.querySelectorAll('.key'))if(el.dataset.key===key||normalize(el.dataset.key)===normalize(key)){el.classList.add('pressed');setTimeout(()=>el.classList.remove('pressed'),110)}}
+function pressFeedback(key){for(const el of document.querySelectorAll('.key'))if(el.dataset.key===key||el.dataset.key.toLocaleLowerCase('tr-TR')===key.toLocaleLowerCase('tr-TR')){el.classList.add('pressed');setTimeout(()=>el.classList.remove('pressed'),110)}}
 function wrong(message){sound.play('wrong');$('#feedback').textContent=message;const el=$('#answer-area');el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
 function act(key){
  if(state.done||busy)return;if(state.between){if(key==='Enter')startRound();return}sound.unlock();pressFeedback(key);
@@ -66,7 +65,7 @@ function act(key){
  if(key.length!==1||state.typed.length>=60||(!/[\p{L}0-9 "*<,.\-]/u.test(key)))return;
  state.typed+=key;state.keystrokes++;
  const okay=aliases(current()).some(a=>a.startsWith(normalize(state.typed)));
- if(okay){state.correctKeys++;sound.play('key');$('#feedback').textContent='';}else{state.errors++;state.questionErrors=(state.questionErrors||0)+1;if(state.round===2){state.round3Errors=(state.round3Errors||0)+1;(state.round3Misses??={})[current().id]=true;}state.misses[current().id]=(state.misses[current().id]||0)+1;wrong('Bu harfi kontrol edin. Sil tuşuyla düzeltebilirsiniz.');}
+ if(okay){state.correctKeys++;if(key!==' ')sound.play('letter',state.typed.length-1);$('#feedback').textContent='';}else{state.errors++;state.questionErrors=(state.questionErrors||0)+1;if(state.round===2){state.round3Errors=(state.round3Errors||0)+1;(state.round3Misses??={})[current().id]=true;}state.misses[current().id]=(state.misses[current().id]||0)+1;wrong('Bu harfi kontrol edin. Sil tuşuyla düzeltebilirsiniz.');}
  save();renderAnswer();
 }
 function submit(){
@@ -77,7 +76,7 @@ function submit(){
  timer=setTimeout(()=>{submitted=false;$('#game').classList.add(state.index===7?'dissolving':'transitioning');timer=setTimeout(()=>{next();$('#game').classList.remove('transitioning','dissolving');},state.index===7?540:220)},700);
 }
 function next(){
- state.typed='';state.questionErrors=0;state.index++;if(state.index===8){state.index=0;state.round++;if(state.round<3)state.between=true;if(state.round===3){state.round=2;state.index=7;state.done=true;state.elapsed=Date.now()-state.started;const s=read('kemik:streak',{last:null,count:0});if(s.last!==date)write('kemik:streak',{last:date,count:s.last&&dayNumber(date)-dayNumber(s.last)===1?s.count+1:1});}}
+ state.typed='';state.questionErrors=0;state.index++;if(state.index===8){state.index=0;state.round++;if(state.round<3){state.between=true;sound.play('round');}if(state.round===3){state.round=2;state.index=7;state.done=true;sound.play('day');state.elapsed=Date.now()-state.started;const s=read('kemik:streak',{last:null,count:0});if(s.last!==date)write('kemik:streak',{last:date,count:s.last&&dayNumber(date)-dayNumber(s.last)===1?s.count+1:1});}}
  busy=false;$('#feedback').textContent='';save();paint();
 }
 function startRound(){if(!state.between)return;state.between=false;save();paint();$('#answer').focus({preventScroll:true});}
@@ -95,9 +94,8 @@ function renderResults(){
 $('#keyboard').addEventListener('click',e=>{const button=e.target.closest('[data-key]');if(button)act(button.dataset.key)});
 document.addEventListener('keydown',e=>{if($('#instructions').open||e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest('nav')||e.target.closest('#results')||e.target.closest('footer'))return;if(e.key==='Tab')return;if(e.key===' '||e.key==='Enter'||e.key==='Backspace'||e.key.length===1){e.preventDefault();act(e.key)}});
 $('#case').onclick=()=>{prefs.upper=!prefs.upper;save();paint();if(!state.done)$('#answer').focus({preventScroll:true})};
-$('#language').onclick=()=>{if(busy)return;save();prefs.mode=prefs.mode==='latin'?'tr':'latin';state=read(`kemik:v2:${date}:${prefs.mode}`,fresh());save();paint();if(!state.done)$('#answer').focus({preventScroll:true})};
 $('#sound').onclick=()=>{prefs.sound=!prefs.sound;sound.enabled=prefs.sound;sound.unlock();save();paint();if(!state.done)$('#answer').focus({preventScroll:true})};
 $('#help').onclick=()=>$('#instructions').showModal();$('#close-help').onclick=$('#start').onclick=()=>{$('#instructions').close();$('#answer').focus({preventScroll:true})};
-function checkDay(){if(date!==localDate()){clearTimeout(timer);save();date=localDate();state=read(`kemik:v2:${date}:${prefs.mode}`,fresh());busy=false;submitted=false;$('#game').classList.remove('transitioning');paint()}}
+function checkDay(){if(date!==localDate()){clearTimeout(timer);save();date=localDate();state=read(`kemik:v4:${date}:${prefs.mode}`,fresh());busy=false;submitted=false;$('#game').classList.remove('transitioning');paint()}}
 setInterval(checkDay,30000);document.addEventListener('visibilitychange',checkDay);
 paint();createSkull($('#skull')).then(view=>{skull=view;$('#loading').hidden=true;paint();document.body.dataset.ready='true'}).catch(error=>{console.error(error);$('#loading').classList.add('error');$('#loading').textContent='3B model yüklenemedi. WebGL destekli bir tarayıcıda sayfayı yenileyin.';document.body.dataset.ready='error'});
