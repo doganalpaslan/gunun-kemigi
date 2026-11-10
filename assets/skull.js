@@ -30,14 +30,14 @@ export async function createSkull(canvas){
  // Opacity stays one; the transparent queue allows this solid target to render
  // after both glass passes. Depth testing still preserves the target's own shape.
  const red=new THREE.MeshStandardMaterial({color:0xd0103a,roughness:.58,metalness:0,transparent:true,opacity:1});
- const response=await fetch('assets/model/manifest.json');if(!response.ok)throw Error('Model dizini yüklenemedi');const manifest=await response.json();
+ const response=await fetch('assets/model/manifest.json?v=b6ff2c9-0020');if(!response.ok)throw Error('Model dizini yüklenemedi');const manifest=await response.json();
  const cache=new Map();let request=0,running=true,lastId='',activeBone,angle=0,targetAngle=0,tilt=.08,targetTilt=.08,frame,mainCenter=new THREE.Vector3(),closeCenter=new THREE.Vector3(),mainSize=100,closeSize=50,ready=false,mainBox=new THREE.Box3(),closeBox=new THREE.Box3(),closeSide=0,closeTargets=[];
  const camera=new THREE.OrthographicCamera(-200,200,200,-200,.1,5000);camera.position.set(0,0,2000);camera.lookAt(0,0,0);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const observer=new ResizeObserver(()=>{const {width,height}=canvas.getBoundingClientRect();renderer.setSize(width,height,false);closeRenderer.setSize(closeCanvas.clientWidth,closeCanvas.clientHeight,false)});observer.observe(canvas);
  async function load(region){
   if(cache.has(region)){const v=cache.get(region);cache.delete(region);cache.set(region,v);return v;}
-  const res=await fetch(`assets/model/${region==='skull'?'skull':region}.bin`);if(!res.ok)throw Error('Bölge yüklenemedi');const buffer=await res.arrayBuffer(),group=new THREE.Group();
+  const res=await fetch(`assets/model/${region==='skull'?'skull':region}.bin?v=b6ff2c9-0020`);if(!res.ok)throw Error('Bölge yüklenemedi');const buffer=await res.arrayBuffer(),group=new THREE.Group();
   const entries=manifest.filter(m=>m.region===region);
   // Bring the paired hands/feet together without changing their internal anatomical relationships.
   const sideCenters={};

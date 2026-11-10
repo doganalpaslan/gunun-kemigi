@@ -1,7 +1,7 @@
-import {normalize,dailyBones,roundBones,dayNumber,answerAliases} from './bones.js';
-import {createSkull} from './skull.js';
-import {notesForDay} from './study.js';
-import {GameSound} from './sound.js';
+import {normalize,dailyBones,roundBones,dayNumber,answerAliases} from './bones.js?v=b6ff2c9-0020';
+import {createSkull} from './skull.js?v=b6ff2c9-0020';
+import {notesForDay} from './study.js?v=b6ff2c9-0020';
+import {GameSound} from './sound.js?v=b6ff2c9-0020';
 const $=s=>document.querySelector(s);
 const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}}
