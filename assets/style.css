@@ -20,7 +20,7 @@
 
 
 /* A separate alpha canvas lets only the close context dissolve at its edges. */
-#close-view{position:absolute;right:0;top:3%;width:24%;height:58%;z-index:1;pointer-events:none;background:transparent;mask-image:radial-gradient(ellipse closest-side,#000 55%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse closest-side,#000 55%,transparent 100%)}
+#close-view{position:absolute;right:0;top:3%;width:31.2%;height:75.4%;z-index:1;pointer-events:none;background:transparent}
 .stage #close-view{transition:opacity .5s,filter .5s,transform .54s}
 .dissolving #close-view{opacity:0;filter:blur(12px);transform:translateX(-140px) scale(.92)}
 .round-ended #close-view{visibility:hidden}
